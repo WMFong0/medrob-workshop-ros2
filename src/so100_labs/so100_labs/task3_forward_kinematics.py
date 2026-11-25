@@ -58,10 +58,17 @@ def rotation_from_rpy(roll, pitch, yaw):
     rx = np.array([[1, 0, 0],
                    [0, cr, -sr],
                    [0, sr, cr]])
-    ry = ...  # TODO elementary rotation about y (use cp, sp)
-    rz = ...  # TODO elementary rotation about z (use cy, sy)
+    # ry = ...  # TODO elementary rotation about y (use cp, sp)
+    # rz = ...  # TODO elementary rotation about z (use cy, sy)
+    ry = np.array([[cp, 0, sp],
+                   [0, 1, 0],
+                   [-sp, 0, cp]])
+    rz = np.array([[cy, -sy, 0],
+                   [sy, cy, 0],
+                   [0, 0, 1]])
 
-    R = ...  # TODO compose them in the right order, with the MATRIX product @
+    # R = ...  # TODO compose them in the right order, with the MATRIX product @
+    R = rz @ ry @ rx  # TODO compose them in the right order, with the MATRIX product @
     return R
 
 
@@ -70,18 +77,22 @@ def rotation_about_axis(axis, angle):
     """3x3 rotation of `angle` rad about `axis` (normalise it first). Rodrigues' formula:
     R = I + sin(a) K + (1 - cos(a)) K^2, with K the skew-symmetric matrix of the axis."""
     k = np.asarray(axis, dtype=float)       # list -> numpy array
-    k = ...  # TODO make it a unit vector (hint: np.linalg.norm)
+    k = k / np.linalg.norm(k)  # TODO make it a unit vector (hint: np.linalg.norm)
     kx, ky, kz = k                          # unpack the 3 components
 
     # Skew-symmetric matrix of k:
     #     [  0  -kz   ky ]
     #     [  kz   0  -kx ]
     #     [ -ky  kx    0 ]
-    K = ...  # TODO write it with np.array([[...], [...], [...]])
+    # K = ...  # TODO write it with np.array([[...], [...], [...]])
+    K = np.array([[0, -kz, ky],
+         [kz, 0, -kx],
+         [-ky, kx, 0]])
 
     identity = np.eye(3)
     # NB: K^2 means K @ K.  K ** 2 would square every ELEMENT: wrong!
-    R = ...  # TODO Rodrigues' formula (math.sin, math.cos, @)
+    # R = ...  # TODO Rodrigues' formula (math.sin, math.cos, @)
+    R = identity + math.sin(angle) * K + (1 - math.cos(angle)) * (K @ K)
     return R
 
 
@@ -89,8 +100,10 @@ def rotation_about_axis(axis, angle):
 def homogeneous(rotation, translation):
     """4x4 homogeneous transform from a 3x3 rotation and a 3-vector translation."""
     T = np.eye(4)
-    T[:3, :3] = ...  # TODO top-left 3x3 block
-    T[:3, 3] = ...   # TODO first 3 rows of the last column
+    # T[:3, :3] = ...  # TODO top-left 3x3 block
+    # T[:3, 3] = ...   # TODO first 3 rows of the last column
+    T[:3, :3] = rotation
+    T[:3, 3] =  translation
     return T
 
 
@@ -109,14 +122,19 @@ def forward_kinematics(q):
         name, xyz, rpy, axis = joint        # unpack the 4 fields of this joint
         roll, pitch, yaw = rpy              # unpack the 3 angles
 
-        R_origin = ...  # TODO rotation of the joint origin (your EX1 function)
-        T_origin = ...  # TODO fixed transform (your EX3 function)
-        R_joint = ...   # TODO rotation of qi about the joint axis (EX2)
-        T_joint = ...   # TODO as a 4x4 matrix, translation [0.0, 0.0, 0.0]
-        T = ...         # TODO accumulate: post-multiply with @
+        # R_origin = ...  # TODO rotation of the joint origin (your EX1 function)
+        # T_origin = ...  # TODO fixed transform (your EX3 function)
+        # R_joint = ...   # TODO rotation of qi about the joint axis (EX2)
+        # T_joint = ...   # TODO as a 4x4 matrix, translation [0.0, 0.0, 0.0]
+        # T = ...         # TODO accumulate: post-multiply with @
+        R_origin = rotation_from_rpy(roll, pitch, yaw)  # TODO rotation of the joint origin (your EX1 function)
+        T_origin = homogeneous(R_origin, xyz) # TODO fixed transform (your EX3 function)
+        R_joint = rotation_about_axis(axis, qi) # TODO rotation of qi about the joint axis (EX2)
+        T_joint = homogeneous(R_joint, [0.0, 0.0, 0.0])   # TODO as a 4x4 matrix, translation [0.0, 0.0, 0.0]
+        T = T @ T_origin @ T_joint # TODO accumulate: post-multiply with @
 
-    T_tcp = ...  # TODO fixed offset to the TCP: no rotation (np.eye(3)), translation TCP_XYZ
-    T = ...      # TODO
+    T_tcp = homogeneous(np.eye(3), TCP_XYZ)  # TODO fixed offset to the TCP: no rotation (np.eye(3)), translation TCP_XYZ
+    T = T @ T_tcp # TODO
     return T
 
     # QUESTION: why do we POST-multiply (T @ T_i) and not pre-multiply?
