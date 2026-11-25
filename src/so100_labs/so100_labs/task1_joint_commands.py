@@ -71,7 +71,7 @@ def order_joints(named_positions):
         # value = ...  # TODO convert it to a real number (hint: float())
         # ...          # TODO add `value` at the end of the list q
         value = named_positions[name] 
-        value = float(name)
+        value = float(value)
         q.append(value)
     return q
 
