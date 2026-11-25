@@ -15,11 +15,19 @@ from rclpy.node import Node
 
 def compute_circle_command(radius, speed):
     """Return (linear_x, angular_z) to drive a circle of `radius` metres at `speed` m/s.
-
-    TODO: replace the line below. Hint: angular velocity = speed / radius.
+    
+    Hint: angular velocity = speed / radius.
     """
-    return 0.0, 0.0
 
+    if radius == 0:
+        return 0.0, 0.0
+        
+    linear_x = float(speed)
+    angular_z = float(speed / radius)
+    
+    return linear_x, angular_z
+
+    return 0.0, 0.0
 
 class TurtleCircle(Node):
     def __init__(self):
