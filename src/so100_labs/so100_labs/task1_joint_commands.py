@@ -67,9 +67,12 @@ def order_joints(named_positions):
 
     q = []                          # empty list (MATLAB: q = [])
     for name in ARM_JOINTS:         # `name` takes the value of each joint name in turn
-        value = ...  # TODO read the value stored under the key `name`
-        value = ...  # TODO convert it to a real number (hint: float())
-        ...          # TODO add `value` at the end of the list q
+        # value = ...  # TODO read the value stored under the key `name`
+        # value = ...  # TODO convert it to a real number (hint: float())
+        # ...          # TODO add `value` at the end of the list q
+        value = name
+        value = float(name)
+        q.append(value)
     return q
 
 
@@ -82,14 +85,19 @@ def clamp_to_limits(q):
 
     q_clamped = []
     for value, low, high in zip(q, LOWER, UPPER):
-        if ...:              # TODO is value below the lower limit?
-            value = ...      # TODO
-        elif ...:            # TODO is value above the upper limit?
-            value = ...      # TODO
+        # if ...:              # TODO is value below the lower limit?
+        #     value = ...      # TODO
+        # elif ...:            # TODO is value above the upper limit?
+        #     value = ...      # TODO
+            
+        value = max(low, min(value, high))
+
+
         q_clamped.append(value)
     return q_clamped
 
     # EXTRA: the whole if/elif can be written in one line with min() and max(). How?
+
 
 
 # %% EX3 - Split a motion into small steps
@@ -106,29 +114,41 @@ def interpolate_steps(q_start, q_goal, max_step=MAX_STEP):
     # 1) Largest change among all the joints
     delta = 0.0
     for start, goal in zip(q_start, q_goal):
-        change = ...  # TODO absolute change of this joint (hint: abs())
+        # change = ...  # TODO absolute change of this joint (hint: abs())
+        change = abs(goal-start)
         if change > delta:
             delta = change
 
     # 2) Number of steps: delta / max_step rounded UP, and at least 1
-    n = ...  # TODO round up (hint: math.ceil())
-    n = ...  # TODO make sure n >= 1 (hint: max())
+    # n = ...  # TODO round up (hint: math.ceil())
+    # n = ...  # TODO make sure n >= 1 (hint: max())
+    n = max(math.ceil(delta / max_step),1)
 
     # 3) Linear interpolation: at step k (k = 1, ..., n) every joint has done
     #    the fraction k/n of its motion:   value = start + (goal - start) * k / n
     steps = []                          # list of lists (one joint vector per step)
     for k in range(1, n + 1):           # k = 1, 2, ..., n
-        fraction = ...  # TODO
+        # q_0 = q_start + (goal - start) * 1 / n
+        # q_1 = q_start + (goal - start) * 2 / n
+        # q_2 = q_start + (goal - start) * 3 / n
+        # q_3 = q_goal + (goal - start) * 4 / n
+        # fraction = ...  # TODO
+        fraction = k / n
         q_k = []                        # joint vector of step k
         for start, goal in zip(q_start, q_goal):
-            value = ...  # TODO position of this joint at step k
+            # value = ...  # TODO position of this joint at step k
+            value = start + (goal - start) * fraction
             q_k.append(value)
-        ...  # TODO add q_k at the end of steps
+        # ...  # TODO add q_k at the end of steps
+        steps.append(q_k)
     return steps
 
     # QUESTION: with MAX_STEP = 0.02 rad and RATE_HZ = 50 Hz, what is the
     # maximum joint velocity? Why do all joints reach the goal at the same time?
-
+    # Max_V = MAX_STEP * RATE_Hz = 0.02 rad * 50 Hz = 1 rad/s
+    # They arrive simultaneously because the interpolation scales every joint's journey by the exact same fraction (k/n) at every time step k. 
+    # Even though slower joints travel a shorter total angular distance, they spread their smaller displacement across the exact same total number of steps (n), 
+    # moving in perfect sync with the fastest joint.
 
 # %% Main sequence (PROVIDED - read it!)
 def main_sequence(arm):
