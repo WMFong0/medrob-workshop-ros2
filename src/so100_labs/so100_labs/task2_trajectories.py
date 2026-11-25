@@ -62,19 +62,27 @@ def quintic(q0, q1, duration, t):
     For t < 0 or t > duration, clamp t into [0, duration].
     """
     q0 = np.asarray(q0, dtype=float)    # list -> numpy array (so that math is element-wise)
-    q1 = ...  # TODO same for q1
+    # q1 = ...  # TODO same for q1
+    q1 = np.asarray(q1, dtype=float)    # list -> numpy array (so that math is element-wise)
+
 
     # 1) Normalised time, clamped into [0, 1]
-    s = ...  # TODO s = t / T
-    s = ...  # TODO clamp into [0, 1] (hint: min(max(s, 0.0), 1.0))
+    # s = ...  # TODO s = t / T
+    # s = ...  # TODO clamp into [0, 1] (hint: min(max(s, 0.0), 1.0))
+    s = t / duration
+    s = min(max(s, 0.0), 1.0)
 
     # 2) Blend b(s) and its derivative b'(s)  (formulas in the header, use ** for powers)
-    b = ...   # TODO
-    db = ...  # TODO
+    # b = ...   # TODO
+    # db = ...  # TODO
+    b = 10 * s**3 - 15 * s**4 + 6 * s**5
+    db = 30 * s**2 - 60 * s**3 + 30 * s**4
 
     # 3) Position and velocity of all joints at once (q0, q1 are numpy arrays)
-    position = ...  # TODO q(t)
-    velocity = ...  # TODO q'(t), do not forget the 1/T
+    # position = ...  # TODO q(t)
+    # velocity = ...  # TODO q'(t), do not forget the 1/T
+    position = q0 + (q1 - q0) * b
+    velocity = (q1 - q0) * db / duration
     return position, velocity           # two outputs
 
 
@@ -90,8 +98,10 @@ def minimum_duration(q0, q1, max_velocity=MAX_VELOCITY):
     q0 = np.asarray(q0, dtype=float)
     q1 = np.asarray(q1, dtype=float)
 
-    delta = ...  # TODO largest absolute change (hint: np.max, np.abs)
-    T = ...      # TODO
+    # delta = ...  # TODO largest absolute change (hint: np.max, np.abs)
+    # T = ...      # TODO
+    delta = np.max(np.abs(q1 - q0))
+    T = delta * PEAK_VELOCITY_FACTOR / max_velocity
     return T
 
 
@@ -117,21 +127,30 @@ def sample_trajectory(waypoints, max_velocity=MAX_VELOCITY, dt=0.1):
     for q0, q1 in zip(waypoints[:-1], waypoints[1:]):
 
         # 1) Duration of this segment
-        duration = ...  # TODO call your minimum_duration()
-        duration = ...  # TODO at least dt (hint: max())
-        duration = ...  # TODO round UP to a multiple of dt (math.ceil)
+        # duration = ...  # TODO call your minimum_duration()
+        # duration = ...  # TODO at least dt (hint: max())
+        # duration = ...  # TODO round UP to a multiple of dt (math.ceil)
+        duration = minimum_duration(q0, q1)
+        duration = max(dt, duration)
+        duration = math.ceil(duration / dt) * dt
+
         n = round(duration / dt)    # number of samples (an integer, needed by range)
 
         # 2) Sample at t = dt, 2 dt, ..., n dt   (t = 0 is the end of the previous segment)
         for k in range(1, n + 1):
-            t_local = ...           # TODO time inside this segment
-            q, v = ...              # TODO call quintic() (it returns TWO values)
-            times.append(...)       # TODO ABSOLUTE time (remember t_offset)
+            # t_local = ...           # TODO time inside this segment
+            # q, v = ...              # TODO call quintic() (it returns TWO values)
+            # times.append(...)       # TODO ABSOLUTE time (remember t_offset)
+            # positions.append(q.tolist())        # numpy array -> list
+            # velocities.append(...)  # TODO same for v
+            t_local = k * dt           # TODO time inside this segment
+            q, v = quintic(q0, q1, duration, t_local)              # TODO call quintic() (it returns TWO values)
+            times.append(abs(t_local + t_offset))       # TODO ABSOLUTE time (remember t_offset)
             positions.append(q.tolist())        # numpy array -> list
-            velocities.append(...)  # TODO same for v
+            velocities.append(v.tolist())  # TODO same for v
 
         # 3) The next segment starts where this one ends
-        t_offset = ...  # TODO
+        t_offset += duration  # TODO
 
     return times, positions, velocities
 
